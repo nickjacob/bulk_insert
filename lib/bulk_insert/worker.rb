@@ -157,7 +157,13 @@ module BulkInsert
         update_values = @columns.map do |column|
           "#{column.name}=EXCLUDED.#{column.name}"
         end.join(', ')
-        ' ON CONFLICT(' + update_duplicates.join(', ') + ') DO UPDATE SET ' + update_values
+
+        uspec = update_duplicates.is_a?(Hash) ?
+          update_duplicates : { columns: update_duplicates }
+        predicate = uspec[:predicate].to_s
+        ucolumns = uspec[:columns].to_s
+
+        " ON CONFLICT (#{ucolumns.join(', ')}) #{predicate} DO UPDATE SET #{update_values}"
       elsif adapter_name =~ /^mysql/i && update_duplicates
         update_values = @columns.map do |column|
           "`#{column.name}`=VALUES(`#{column.name}`)"
